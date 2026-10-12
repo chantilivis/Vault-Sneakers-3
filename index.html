@@ -14,7 +14,7 @@
 
     <!-- Barra de Anúncios no Topo -->
     <div class="top-announcement">
-        <p>⚡ FRETE GRÁTIS PARA TODO O BRASIL EM COMPRAS ACIMA DE R$ 299 | PARCELE EM ATÉ 10X ⚡</p>
+        <p>⚡ FRETE GRÁTIS EM MODELOS SELECIONADOS | PARCELE EM ATÉ 10X ⚡</p>
     </div>
 
     <header>
@@ -28,7 +28,8 @@
 
                 <div class="search-box-clean">
                     <span class="search-icon">🔍</span>
-                    <input type="text" id="input-busca" placeholder="BUSCAR" onkeyup="buscarProduto(this.value)">
+                    <!-- A busca é ligada pelo script.js (sem onkeyup para não rodar 2x) -->
+                    <input type="text" id="input-busca" placeholder="BUSCAR">
                 </div>
             </div>
 
@@ -42,12 +43,12 @@
             <div class="header-right">
                 <a onclick="mudarPagina('home')" class="nav-text-link">NOSSAS LOJAS</a>
                 <a onclick="mudarPagina('home')" class="nav-btn-box">SEJA UM FRANQUEADO</a>
-                
+
                 <div class="header-icons-group">
                     <a onclick="mudarPagina('home')" title="Favoritos" class="icon-link">♡</a>
                     <a onclick="mudarPagina('login')" title="Minha Conta" class="icon-link">🙎‍♂️</a>
                     <!-- Sacola interativa -->
-                    <div class="cart-box" onclick="mudarPagina('carrinho')" title="Sacola">
+                    <div class="cart-box" id="btn-carrinho" onclick="mudarPagina('carrinho')" title="Sacola">
                         <span class="bag-icon">🛍️</span>
                         <span class="cart-badge" id="cart-badge">0</span>
                     </div>
@@ -70,7 +71,9 @@
                 <button class="filter-btn" onclick="filtrarProdutos('Casual', this)">Casual</button>
                 <button class="filter-btn" onclick="filtrarProdutos('Esportivo', this)">Esportivo</button>
                 <button class="filter-btn" onclick="filtrarProdutos('Nike', this)">Nike</button>
-              
+                <button class="filter-btn" onclick="filtrarProdutos('Air Force', this)">Air Force</button>
+                <button class="filter-btn" onclick="filtrarProdutos('Jordan', this)">Jordan</button>
+                <button class="filter-btn" onclick="filtrarProdutos('Air Max', this)">Air Max</button>
             </div>
         </div>
 
@@ -91,7 +94,7 @@
     <section id="carrinho" class="page-section">
         <a class="back-link" onclick="mudarPagina('home')">← Continuar Comprando</a>
         <h2 class="cart-title">Sua Sacola de Compras</h2>
-        
+
         <div class="cart-container">
             <div class="cart-items" id="cart-items-list">
                 <!-- Itens adicionados aparecem aqui -->
@@ -105,7 +108,7 @@
                 </div>
                 <div class="summary-row">
                     <span>Frete</span>
-                    <span style="color: var(--green-price); font-weight: 700;">GRÁTIS</span>
+                    <span id="cart-frete">—</span>
                 </div>
                 <hr>
                 <div class="summary-row total-row">
