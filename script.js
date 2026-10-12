@@ -2,14 +2,13 @@
 // HELPERS DE IMAGEM
 // =====================================================
 
-// Gera os caminhos das imagens a partir do padrão do renomeador:
-//   gerarImagens("Air-Jordan-1-Mid", 6, "jpeg")
-//   -> img/Air-Jordan-1-Mid-1.jpeg ... img/Air-Jordan-1-Mid-6.jpeg
-function gerarImagens(prefixo, quantidade, extensao = "jpg") {
+// gerarImagens("Air-Jordan-4-bred", 6, "jpeg")
+//   -> img/Air-Jordan-4-bred-1.jpeg ... img/Air-Jordan-4-bred-6.jpeg
+function gerarImagens(prefixo, quantidade, extensao = "jpeg") {
   return Array.from({ length: quantidade }, (_, i) => `img/${prefixo}-${i + 1}.${extensao}`);
 }
 
-// Imagem de reserva (SVG embutido) para quando um arquivo não for encontrado
+// Imagem de reserva (SVG embutido) quando um arquivo não for encontrado
 const IMG_RESERVA =
   "data:image/svg+xml;utf8," +
   encodeURIComponent(
@@ -18,117 +17,196 @@ const IMG_RESERVA =
     '<text x="50%" y="50%" text-anchor="middle" fill="#999" font-family="Arial" font-size="20">Sem imagem</text>' +
     '</svg>'
   );
+window.IMG_RESERVA = IMG_RESERVA;
 
 // =====================================================
-// PRODUTOS
+// CONFIGURAÇÕES DA LOJA
 // =====================================================
-// ATENÇÃO: o 1º parâmetro de gerarImagens() precisa ser IGUAL ao nome dos
-// arquivos na pasta img (sem o "-número.extensão"), inclusive maiúsculas.
-// A extensão (jpg / jpeg / png) também precisa ser igual à do arquivo real.
-const produtos = [
-  {
-    id: 1,
-    nome: "Air force 1 low panda",
+const VALOR_FRETE = 29.90;
+const CHAVE_CARRINHO = "vault-carrinho-v2";
+
+// =====================================================
+// CRIAÇÃO DE PRODUTOS (calcula os preços sozinho)
+// =====================================================
+const DESCRICOES = {
+  "Air Force": "O ícone do basquete que virou clássico das ruas: visual limpo, construção em couro e amortecimento Air para o dia todo.",
+  "Jordan": "Herança do basquete em um design inconfundível. Conforto, estilo e a atitude Jordan em cada passo.",
+  "Air Max": "Amortecimento Air visível e visual marcante, feito para quem quer conforto e presença em qualquer ocasião.",
+  "Dunk": "Nascido nas quadras e adotado pela cultura de rua: silhueta clássica e combinações de cores que chamam atenção.",
+  "Casual": "Estilo versátil para o dia a dia, combinando com qualquer look e confortável do começo ao fim do dia.",
+  "Shox": "Amortecimento com molas no calcanhar e visual futurista, direto do início dos anos 2000."
+};
+
+function criarProduto(id, dados) {
+  const { nome, categoria, prefixo, qtd, preco, desconto, extensao = "jpeg", imagens } = dados;
+
+  const temDesconto = desconto > 0;
+  const precoDe = temDesconto ? Math.round(preco / (1 - desconto / 100) / 10) * 10 - 0.10 : 0;
+  const precoPix = temDesconto ? Math.floor(preco * (1 - desconto / 100) * 100) / 100 : 0;
+  const parcela = preco / 10;
+  const br = (v) => "R$ " + v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  return {
+    id,
+    nome,
     marca: "Nike",
-    categoria: "Air Force",
+    categoria,
     logoMarca: "NIKE",
-    desconto: "15% OFF",
-    freteGratis: true,
-    precoPorNum: 799.90,
-    precoPor: "R$ 799,90",
-    precoPix: "R$ 679,91 no PIX",
-    precoDe: "R$ 939,90",
-    parcelas: "ou 10x de R$ 79,99 sem juros",
-    descricao: "O brilho continua vivo no Nike Air force 1 low panda, o ícone do basquete que dá um toque moderno naquilo que você conhece bem.",
-    imagens: gerarImagens("Air-Force-1-Panda", 8, "jpg")      // 1 a 8
-  },
-  {
-    id: 2,
-    nome: "Nike Air Jordan 1 Mid",
-    marca: "Nike",
-    categoria: "Jordan",
-    logoMarca: "NIKE",
-    desconto: "10% OFF",
-    freteGratis: true,
-    precoPorNum: 1099.90,
-    precoPor: "R$ 1.099,90",
-    precoPix: "R$ 989,91 no PIX",
-    precoDe: "R$ 1.219,90",
-    parcelas: "ou 10x de R$ 109,99 sem juros",
-    descricao: "Inspirado no primeiro AJ1, o tênis Air Jordan 1 Mid oferece aos fãs a oportunidade de seguir os passos da grandeza.",
-    imagens: gerarImagens("Air-Jordan-1-Mid", 6, "jpeg")      // AJUSTE: prefixo, quantidade e extensão
-  },
-  {
-    id: 3,
-    nome: "Nike Air Max 90",
-    marca: "Nike",
-    categoria: "Air Max",
-    logoMarca: "NIKE",
-    desconto: "20% OFF",
-    freteGratis: false,
-    precoPorNum: 699.90,
-    precoPor: "R$ 699,90",
-    precoPix: "R$ 629,91 no PIX",
-    precoDe: "R$ 874,90",
-    parcelas: "ou 10x de R$ 69,99 sem juros",
-    descricao: "Nada como o conforto e a tradição comprovada do Nike Air Max 90, com o icônico solado Waffle e amortecimento Air visível.",
-    imagens: gerarImagens("Air-Max-90", 6, "jpeg")            // AJUSTE
-  },
-  {
-    id: 4,
-    nome: "Nike Court Vision Low",
-    marca: "Nike",
-    categoria: "Casual",
-    logoMarca: "NIKE",
-    desconto: "5% OFF",
-    freteGratis: true,
-    precoPorNum: 499.90,
-    precoPor: "R$ 499,90",
-    precoPix: "R$ 474,91 no PIX",
-    precoDe: "R$ 529,90",
-    parcelas: "ou 6x de R$ 83,31 sem juros",
-    descricao: "Combina o estilo de ataque do basquete dos anos 80 com a cultura acelerada do jogo atual.",
-    imagens: gerarImagens("Nike-Court-Vision-Low", 6, "jpeg") // AJUSTE
-  },
-  {
-    id: 5,
-    nome: "Nike Revolution 6 Next Nature",
-    marca: "Nike",
-    categoria: "Esportivo",
-    logoMarca: "NIKE",
-    desconto: "25% OFF",
-    freteGratis: true,
-    precoPorNum: 299.90,
-    precoPor: "R$ 299,90",
-    precoPix: "R$ 269,91 no PIX",
-    precoDe: "R$ 399,90",
-    parcelas: "ou 4x de R$ 74,97 sem juros",
-    descricao: "Defina o ritmo no início da sua corrida com a sensação de maciez do Nike Revolution 6.",
-    imagens: gerarImagens("Nike-Revolution-6", 6, "jpeg")     // AJUSTE
-  }
+    desconto: temDesconto ? `${desconto}% OFF` : "",
+    freteGratis: dados.freteGratis === true,
+    precoPorNum: preco,
+    precoPor: br(preco),
+    precoPix: temDesconto ? `${br(precoPix)} no PIX` : "",
+    precoDe: temDesconto ? br(precoDe) : "",
+    parcelas: `ou 10x de ${br(parcela)} sem juros`,
+    descricao: dados.descricao || DESCRICOES[categoria] || "",
+    imagens: imagens || gerarImagens(prefixo, qtd, extensao)
+  };
+}
+
+// =====================================================
+// CATÁLOGO
+// =====================================================
+// Cada linha: o "prefixo" é o nome do arquivo SEM o "-número.jpeg".
+// AJUSTE os preços e descontos como quiser.
+const DADOS_PRODUTOS = [
+  // ---------- AIR FORCE 1 ----------
+  { nome: "Air force 1 low panda", freteGratis: true, categoria: "Air Force", prefixo: "Air-force-1-low-panda", qtd: 8, preco: 799.90, desconto: 20,
+    descricao: "O brilho continua vivo no Nike Air force 1 low panda, o ícone do basquete que dá um toque moderno naquilo que você conhece bem." },
+  { nome: "Nike Air Force 1 Low Blue White", categoria: "Air Force", prefixo: "Air-force-1-blue-white", qtd: 8, preco: 799.90, desconto: 0,
+    // a foto nº 1 tem o nome "Air-force-1 blue-&-white-1.jpeg" (com espaço e &)
+    imagens: ["img/Air-force-1 blue-&-white-1.jpeg", ...gerarImagens("Air-force-1-blue-white", 8).slice(1)] },
+  { nome: "Nike Air Force 1 Low Triple Black", categoria: "Air Force", prefixo: "Air-force-1-triple-black", qtd: 8, preco: 799.90, desconto: 0 },
+  { nome: "Nike Air Force 1 Low Triple White", categoria: "Air Force", prefixo: "Air-force-1-triple-white", qtd: 8, preco: 799.90, desconto: 10 },
+  { nome: "Nike Air Force 1 Low WB", categoria: "Air Force", prefixo: "Air-force-1-wb", qtd: 8, preco: 799.90, desconto: 0 },
+  { nome: "Nike Air Force 1 Low White Grey", categoria: "Air Force", prefixo: "Air-force-1-white-grey", qtd: 8, preco: 799.90, desconto: 0 },
+
+  // ---------- JORDAN 4 ----------
+  { nome: "Nike Air Jordan 4 Black Cat", freteGratis: true, categoria: "Jordan", prefixo: "Air-Jordan-4-Black-Cat", qtd: 6, preco: 1499.90, desconto: 10 },
+  { nome: "Nike Air Jordan 4 Bred", categoria: "Jordan", prefixo: "Air-Jordan-4-bred", qtd: 6, preco: 1499.90, desconto: 10 },
+  { nome: "Nike Air Jordan 4 Midnight Navy", categoria: "Jordan", prefixo: "Air-Jordan-4-Midnight-Navy", qtd: 6, preco: 1499.90, desconto: 0 },
+  { nome: "Nike Air Jordan 4 Military Black", categoria: "Jordan", prefixo: "Air-Jordan-4-Military-Black", qtd: 6, preco: 1499.90, desconto: 0 },
+  { nome: "Nike Air Jordan 4 Taupe Haze", categoria: "Jordan", prefixo: "Air-Jordan-4-Taupe-Haze", qtd: 6, preco: 1499.90, desconto: 0 },
+  { nome: "Nike Air Jordan 4 University Blue", categoria: "Jordan", prefixo: "Air-Jordan-4-University-Blue", qtd: 6, preco: 1499.90, desconto: 0 },
+
+  // ---------- AIR MAX 95 ----------
+  { nome: "Nike Air Max 95 Big Bubble Comet Red", categoria: "Air Max", prefixo: "Air-Max-95-Big-Bubble-Comet-Red", qtd: 8, preco: 999.90, desconto: 0 },
+  { nome: "Nike Air Max 95 Neon", freteGratis: true, categoria: "Air Max", prefixo: "Air-Max-95-Neon", qtd: 8, preco: 999.90, desconto: 20 },
+  { nome: "Nike Air Max 95 Pink Foam", categoria: "Air Max", prefixo: "Air-Max-95-Pink-Foam", qtd: 8, preco: 999.90, desconto: 20 },
+  { nome: "Nike Air Max 95 Triple White", categoria: "Air Max", prefixo: "Air-Max-95-Triple-White", qtd: 8, preco: 999.90, desconto: 0 },
+
+  // ---------- AIR MAX DN ----------
+  { nome: "Nike Air Max Dn Medium Violet", categoria: "Air Max", prefixo: "Air-Max-Dn-Medium-Violet", qtd: 8, preco: 1199.90, desconto: 0 },
+  { nome: "Nike Air Max Dn NRG Marrom", categoria: "Air Max", prefixo: "Air-Max-Dn-NRG-Marrom", qtd: 8, preco: 1199.90, desconto: 0 },
+  { nome: "Nike Air Max Dn Photon Dust White", categoria: "Air Max", prefixo: "Air-Max-Dn-Photon-Dust-White", qtd: 8, preco: 1199.90, desconto: 0 },
+  { nome: "Nike Air Max Dn Roam Black", categoria: "Air Max", prefixo: "Air-Max-Dn-Roam-Black", qtd: 8, preco: 1199.90, desconto: 10 },
+  { nome: "Nike Air Max Dn Triple White", categoria: "Air Max", prefixo: "Air-Max-Dn-Triple-White", qtd: 8, preco: 1199.90, desconto: 0 },
+  { nome: "Nike Air Max Dn University Blue", categoria: "Air Max", prefixo: "Air-Max-Dn-University-Blue", qtd: 8, preco: 1199.90, desconto: 0 },
+
+  // ---------- AIR MAX PLUS TN ----------
+  { nome: "Nike Air Max Plus TN Hyper Pink Volt", categoria: "Air Max", prefixo: "Air-max-plus-Tn-Hyper-PinkVolt", qtd: 8, preco: 1099.90, desconto: 0 },
+  { nome: "Nike Air Max Plus TN Tough Red Black", categoria: "Air Max", prefixo: "Air-Max-Plus-Tn-Tough-RedBlack", qtd: 8, preco: 1099.90, desconto: 0 },
+  { nome: "Nike Air Max Plus TN Triple Black", categoria: "Air Max", prefixo: "Air-Max-Plus-Tn-Triple-Black", qtd: 6, preco: 1099.90, desconto: 0 },
+  { nome: "Nike Air Max Plus TN Triple White", categoria: "Air Max", prefixo: "Air-Max-Plus-Tn-Triple-White", qtd: 6, preco: 1099.90, desconto: 0 },
+  { nome: "Nike Air Max Plus TN White Blue Crystal", categoria: "Air Max", prefixo: "Air-max-plus-Tn-White-Blue-Crystal", qtd: 8, preco: 1099.90, desconto: 0 },
+
+  // ---------- DUNK LOW ----------
+  { nome: "Nike Dunk Low Blue White", categoria: "Dunk", prefixo: "Dunk-Low-Blue-white", qtd: 8, preco: 899.90, desconto: 0 },
+  { nome: "Nike Dunk Low Burgundy Crush", categoria: "Dunk", prefixo: "Dunk-Low-Burgundy-Crush", qtd: 8, preco: 899.90, desconto: 0 },
+  { nome: "Nike Dunk Low Grey Fog", categoria: "Dunk", prefixo: "Dunk-Low-Grey-Fog", qtd: 8, preco: 899.90, desconto: 0 },
+  { nome: "Nike Dunk Low Panda", freteGratis: true, categoria: "Dunk", prefixo: "Dunk-Low-panda", qtd: 8, preco: 899.90, desconto: 20 },
+  { nome: "Nike Dunk Low Syracuse", categoria: "Dunk", prefixo: "Dunk-Low-Syracuse", qtd: 8, preco: 899.90, desconto: 0 },
+  { nome: "Nike Dunk Low Varsity Green", categoria: "Dunk", prefixo: "Dunk-Low-Varsity-Green", qtd: 8, preco: 899.90, desconto: 0 },
+
+  // ---------- AIR MAX EXCEE ----------
+  { nome: "Nike Air Max Excee White Grey", categoria: "Casual", prefixo: "Nike-Air-Max-Excee-White-Grey", qtd: 6, preco: 599.90, desconto: 0 },
+
+  // ---------- COURT VISION ----------
+  { nome: "Nike Court Vision Low", freteGratis: true, categoria: "Casual", prefixo: "Nike-Court-Vision-Low-White", qtd: 6, preco: 499.90, desconto: 10,
+    descricao: "Combina o estilo de ataque do basquete dos anos 80 com a cultura acelerada do jogo atual." },
+  { nome: "Nike Court Vision Alta Black White", categoria: "Casual", prefixo: "Nike-Court-Vision-Alta-Black-White", qtd: 6, preco: 549.90, desconto: 0 },
+  { nome: "Nike Court Vision Alta Triple White", categoria: "Casual", prefixo: "Nike-Court-Vision-Alta-Triple-White", qtd: 6, preco: 549.90, desconto: 0 },
+
+  // ---------- SHOX R4 ----------
+  { nome: "Nike Shox R4 Black Pinksicle", categoria: "Shox", prefixo: "Nike-Shox-R4-Black-Pinksicle", qtd: 6, preco: 899.90, desconto: 10 },
+  { nome: "Nike Shox R4 Blue Lagoon", categoria: "Shox", prefixo: "Nike-shox-R4-Blue-Lagoon", qtd: 6, preco: 899.90, desconto: 0 },
+  { nome: "Nike Shox R4 Phantom Picante Red", categoria: "Shox", prefixo: "Nike-Shox-R4-Phantom-Picante-Red", qtd: 6, preco: 899.90, desconto: 0 },
+  { nome: "Nike Shox R4 White Metallic", categoria: "Shox", prefixo: "Nike-Shox-R4-White-Metallic", qtd: 6, preco: 899.90, desconto: 0 }
+
+  // ---------- PENDENTES (nomes cortados no print; cole o nome completo e descomente) ----------
+  // { nome: "Nike Air Max 95 Big Bubble Laser Paisley", categoria: "Air Max", prefixo: "Air-Max-95-Big-Bubble-Laser-Paisley-Gr...", qtd: 8, preco: 999.90, desconto: 0 },
+  // { nome: "Nike Air Max 95 Big Bubble SE Obsidian", categoria: "Air Max", prefixo: "Air-Max-95-Big-Bubble-SE-Obsidian-W...", qtd: 8, preco: 999.90, desconto: 0 },
+  // { nome: "Nike Air Max Plus TN Black Light Smoke Grey", categoria: "Air Max", prefixo: "Air-Max-Plus-Tn-Black-Light-Smoke-Gre...", qtd: 8, preco: 1099.90, desconto: 0 },
 ];
 
+const produtos = DADOS_PRODUTOS.map((dados, i) => criarProduto(i + 1, dados));
+
+// =====================================================
+// ESTADO
+// =====================================================
 let carrinho = [];
 let tamanhoSelecionado = null;
 let contadorItemCarrinho = 0;
+let filtroAtual = "todos";
+let termoBusca = "";
+
+// =====================================================
+// UTILITÁRIOS
+// =====================================================
+function formatarPreco(valor) {
+  return "R$ " + valor.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function mostrarAviso(mensagem) {
+  let toast = document.getElementById("toast");
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "toast";
+    toast.className = "toast";
+    document.body.appendChild(toast);
+  }
+  toast.textContent = mensagem;
+  toast.classList.add("show");
+  clearTimeout(mostrarAviso._timer);
+  mostrarAviso._timer = setTimeout(() => toast.classList.remove("show"), 2500);
+}
 
 // =====================================================
 // NAVEGAÇÃO ENTRE PÁGINAS
 // =====================================================
 function mudarPagina(idSecao) {
-  document.querySelectorAll('.page-section').forEach(sec => sec.classList.remove('active'));
   const secaoAlvo = document.getElementById(idSecao);
-  if (secaoAlvo) {
-    secaoAlvo.classList.add('active');
-  }
+  if (!secaoAlvo) return;
+  document.querySelectorAll(".page-section").forEach(sec => sec.classList.remove("active"));
+  secaoAlvo.classList.add("active");
   window.scrollTo(0, 0);
+}
+
+// =====================================================
+// FILTROS (gerados automaticamente a partir dos produtos)
+// =====================================================
+function gerarFiltros() {
+  const container = document.querySelector(".filters");
+  if (!container) return;
+
+  const categorias = [...new Set(produtos.map(p => p.categoria))];
+  const nomes = ["Todos", "Nike", ...categorias];
+
+  container.innerHTML = nomes.map((nome, i) => {
+    const valor = nome === "Todos" ? "todos" : nome;
+    return `<button class="filter-btn${i === 0 ? " active" : ""}" data-filtro="${valor}">${nome}</button>`;
+  }).join("");
+
+  container.querySelectorAll(".filter-btn").forEach(btn => {
+    btn.addEventListener("click", () => filtrarProdutos(btn.dataset.filtro, btn));
+  });
 }
 
 // =====================================================
 // RENDERIZAÇÃO DOS PRODUTOS
 // =====================================================
 function renderizarProdutos(lista) {
-  const grid = document.getElementById('grid-produtos');
+  const grid = document.getElementById("grid-produtos");
   if (!grid) return;
 
   if (lista.length === 0) {
@@ -136,11 +214,11 @@ function renderizarProdutos(lista) {
     return;
   }
 
-  // Monta tudo numa string e atribui uma única vez (mais rápido que usar += no loop)
-  const html = lista.map(prod => {
-    const tagDesconto = prod.desconto ? `<span class="tag-off">${prod.desconto}</span>` : '';
-    const tagFrete = prod.freteGratis ? `<span class="tag-frete">FRETE GRÁTIS</span>` : '';
-    const precoDeHTML = prod.precoDe ? `<span class="price-old">${prod.precoDe}</span>` : '';
+  grid.innerHTML = lista.map(prod => {
+    const tagDesconto = prod.desconto ? `<span class="tag-off">${prod.desconto}</span>` : "";
+    const tagFrete = prod.freteGratis ? `<span class="tag-frete">FRETE GRÁTIS</span>` : "";
+    const precoDeHTML = prod.precoDe ? `<span class="price-old">${prod.precoDe}</span>` : "";
+    const precoPixHTML = prod.precoPix ? `<span class="price-promo">${prod.precoPix}</span>` : "";
 
     return `
       <div class="product-card" onclick="abrirDetalhes(${prod.id})">
@@ -150,50 +228,58 @@ function renderizarProdutos(lista) {
             ${tagDesconto}
             ${tagFrete}
           </div>
-          <img src="${encodeURI(prod.imagens[0])}" alt="${prod.nome}" onerror="this.onerror=null; this.src=IMG_RESERVA;">
+          <img src="${encodeURI(prod.imagens[0])}" alt="${prod.nome}" loading="lazy" onerror="this.onerror=null; this.src=IMG_RESERVA;">
         </div>
         <div class="product-info-box">
           <h3 class="product-title-text">${prod.nome}</h3>
           <div class="price-row">
             <span class="price-main">${prod.precoPor}</span>
             ${precoDeHTML}
-            <span class="price-promo">${prod.precoPix}</span>
+            ${precoPixHTML}
           </div>
           <div class="price-installments">${prod.parcelas}</div>
         </div>
       </div>
     `;
-  }).join('');
-
-  grid.innerHTML = html;
+  }).join("");
 }
 
 // =====================================================
-// CAMPO DE BUSCA
+// BUSCA + FILTRO (trabalham juntos)
 // =====================================================
+function aplicarFiltros() {
+  const termo = termoBusca.toLowerCase().trim();
+  const filtro = filtroAtual.toLowerCase();
+
+  const resultado = produtos.filter(p => {
+    const passaFiltro =
+      filtro === "todos" ||
+      p.categoria.toLowerCase() === filtro ||
+      p.marca.toLowerCase() === filtro;
+
+    const passaBusca =
+      termo === "" ||
+      p.nome.toLowerCase().includes(termo) ||
+      p.marca.toLowerCase().includes(termo) ||
+      p.categoria.toLowerCase().includes(termo);
+
+    return passaFiltro && passaBusca;
+  });
+
+  renderizarProdutos(resultado);
+}
+
 function buscarProduto(termo) {
-  const termoLimpo = termo.toLowerCase().trim();
-  const filtrados = produtos.filter(p =>
-    p.nome.toLowerCase().includes(termoLimpo) ||
-    p.marca.toLowerCase().includes(termoLimpo) ||
-    p.categoria.toLowerCase().includes(termoLimpo)
-  );
-  renderizarProdutos(filtrados);
+  termoBusca = termo || "";
+  aplicarFiltros();
+  if (termoBusca.trim() !== "") mudarPagina("home");
 }
 
-// =====================================================
-// FILTROS DE CATEGORIA
-// =====================================================
 function filtrarProdutos(filtro, elementoBotao) {
-  document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-  if (elementoBotao) elementoBotao.classList.add('active');
-
-  if (filtro === 'todos') {
-    renderizarProdutos(produtos);
-  } else {
-    const filtrados = produtos.filter(p => p.categoria.toLowerCase() === filtro.toLowerCase());
-    renderizarProdutos(filtrados);
-  }
+  document.querySelectorAll(".filter-btn").forEach(btn => btn.classList.remove("active"));
+  if (elementoBotao) elementoBotao.classList.add("active");
+  filtroAtual = filtro;
+  aplicarFiltros();
 }
 
 // =====================================================
@@ -204,22 +290,17 @@ function abrirDetalhes(id) {
   if (!prod) return;
 
   tamanhoSelecionado = null;
-  const container = document.getElementById('detalhes-conteudo');
-  const bc = document.getElementById('detalhes-breadcrumbs');
-
-  if (bc) {
-    bc.innerHTML = `<span style="cursor:pointer" onclick="mudarPagina('home')">← Voltar</span> / <span>${prod.marca}</span> / <span>${prod.nome}</span>`;
-  }
-
+  const container = document.getElementById("detalhes-conteudo");
   if (!container) return;
 
-  // O caminho vai em data-src (e não dentro do onclick), então nomes com
-  // espaços ou caracteres especiais não quebram mais o HTML.
-  // Se uma imagem não existir (ex.: só tem 5 fotos), a miniatura é removida.
-  let thumbsHTML = '';
-  prod.imagens.forEach((img, index) => {
-    thumbsHTML += `<img src="${encodeURI(img)}" data-src="${encodeURI(img)}" class="${index === 0 ? 'active-thumb' : ''}" onclick="trocarFotoPrincipal(this)" onerror="this.remove()" alt="Foto ${index + 1} de ${prod.nome}">`;
-  });
+  // Se uma foto não existir, a miniatura some sozinha
+  const thumbsHTML = prod.imagens.map((img, index) =>
+    `<img src="${encodeURI(img)}" data-src="${encodeURI(img)}" class="${index === 0 ? "active-thumb" : ""}" onclick="trocarFotoPrincipal(this)" onerror="this.remove()" alt="Foto ${index + 1} de ${prod.nome}">`
+  ).join("");
+
+  const tamanhosHTML = ["37", "38", "39", "40", "41", "42"].map(t =>
+    `<button class="size-btn" onclick="selecionarTamanho(this, '${t}')">${t}</button>`
+  ).join("");
 
   container.innerHTML = `
     <div>
@@ -229,71 +310,79 @@ function abrirDetalhes(id) {
       </div>
     </div>
     <div class="product-details-info">
-      <span style="background:#000; color:#fff; padding:4px 8px; border-radius:4px; display:inline-block; margin-bottom:8px; font-size:0.8rem;">${prod.marca} • ${prod.categoria}</span>
+      <span class="detail-tag">${prod.marca} • ${prod.categoria}</span>
       <h2>${prod.nome}</h2>
-      <div style="margin: 10px 0;">
-        <strong style="font-size:1.4rem;">${prod.precoPor}</strong>
-        <span style="font-size:0.9rem; color:#888; text-decoration:line-through; margin-left:8px;">${prod.precoDe || ''}</span>
+      <div class="detail-price-row">
+        <strong class="detail-price">${prod.precoPor}</strong>
+        ${prod.precoDe ? `<span class="detail-old">${prod.precoDe}</span>` : ""}
       </div>
-      <p style="color: #2e7d32; font-weight: bold; margin-bottom: 5px;">${prod.precoPix}</p>
-      <p style="color: #666; font-size: 0.9rem;">${prod.parcelas}</p>
-      <p style="margin: 15px 0;">${prod.descricao}</p>
+      ${prod.precoPix ? `${prod.precoPix ? `<p class="detail-pix">${prod.precoPix}</p>` : ""}` : ""}
+      <p class="detail-installments">${prod.parcelas}</p>
+      <p class="detail-desc">${prod.descricao}</p>
 
-      <div style="margin-top:20px;">
-        <label style="display:block; margin-bottom:8px; font-weight:bold;">Selecione o Tamanho:</label>
+      <div class="sizes-container">
+        <label>Selecione o Tamanho:</label>
         <div class="sizes-grid">
-          <button class="size-btn" onclick="selecionarTamanho(this, '37')">37</button>
-          <button class="size-btn" onclick="selecionarTamanho(this, '38')">38</button>
-          <button class="size-btn" onclick="selecionarTamanho(this, '39')">39</button>
-          <button class="size-btn" onclick="selecionarTamanho(this, '40')">40</button>
-          <button class="size-btn" onclick="selecionarTamanho(this, '41')">41</button>
+          ${tamanhosHTML}
         </div>
       </div>
 
-      <button style="margin-top:20px; padding:12px 24px; background:#ff007a; color:#fff; border:none; border-radius:8px; font-weight:bold; cursor:pointer;" onclick="adicionarAoCarrinho(${prod.id})">Adicionar à Sacola 🛒</button>
+      <button class="btn-buy" onclick="adicionarAoCarrinho(${prod.id})">Adicionar à Sacola 🛒</button>
     </div>
   `;
 
-  mudarPagina('detalhes');
+  mudarPagina("detalhes");
 }
 
-// =====================================================
-// TROCA DE IMAGEM PRINCIPAL
-// =====================================================
 function trocarFotoPrincipal(elementoThumb) {
-  const fotoPrincipal = document.getElementById('foto-principal');
-  if (fotoPrincipal) {
-    fotoPrincipal.src = elementoThumb.dataset.src;
-  }
-  document.querySelectorAll('.gallery-thumbs img').forEach(img => img.classList.remove('active-thumb'));
-  elementoThumb.classList.add('active-thumb');
+  const fotoPrincipal = document.getElementById("foto-principal");
+  if (fotoPrincipal) fotoPrincipal.src = elementoThumb.dataset.src;
+  document.querySelectorAll(".gallery-thumbs img").forEach(img => img.classList.remove("active-thumb"));
+  elementoThumb.classList.add("active-thumb");
 }
 
-// =====================================================
-// SELEÇÃO DE TAMANHO DO TÊNIS
-// =====================================================
 function selecionarTamanho(elementoBtn, tamanho) {
-  document.querySelectorAll('.size-btn').forEach(btn => btn.classList.remove('selected'));
-  elementoBtn.classList.add('selected');
+  document.querySelectorAll(".size-btn").forEach(btn => btn.classList.remove("selected"));
+  elementoBtn.classList.add("selected");
   tamanhoSelecionado = tamanho;
 }
 
 // =====================================================
 // CARRINHO
 // =====================================================
+function salvarCarrinho() {
+  try {
+    localStorage.setItem(CHAVE_CARRINHO, JSON.stringify(carrinho));
+  } catch (e) { /* storage indisponível */ }
+}
+
+function carregarCarrinho() {
+  try {
+    const salvo = JSON.parse(localStorage.getItem(CHAVE_CARRINHO));
+    if (!Array.isArray(salvo)) return;
+    // recarrega os dados atuais do produto (preço, frete) e mantém tamanho/id do item
+    carrinho = salvo
+      .filter(item => produtos.some(p => p.id === item.id && p.nome === item.nome))
+      .map(item => ({ ...produtos.find(p => p.id === item.id), tamanho: item.tamanho, cartItemId: item.cartItemId }));
+    contadorItemCarrinho = carrinho.reduce((max, item) => Math.max(max, item.cartItemId || 0), 0);
+  } catch (e) {
+    carrinho = [];
+  }
+}
+
 function adicionarAoCarrinho(idProduto) {
   if (!tamanhoSelecionado) {
-    alert('Por favor, selecione um tamanho antes de adicionar à sacola.');
+    mostrarAviso("Selecione um tamanho antes de adicionar à sacola.");
     return;
   }
   const prod = produtos.find(p => p.id === idProduto);
+  if (!prod) return;
 
-  // ID único por item (contador) para poder remover itens específicos
   contadorItemCarrinho++;
   carrinho.push({ ...prod, tamanho: tamanhoSelecionado, cartItemId: contadorItemCarrinho });
 
   atualizarCarrinho();
-  alert(`Tênis ${prod.nome} (Tamanho ${tamanhoSelecionado}) adicionado à sacola com sucesso! 🛒`);
+  mostrarAviso(`${prod.nome} (Tam. ${tamanhoSelecionado}) adicionado à sacola! 🛒`);
 }
 
 function removerDoCarrinho(cartItemId) {
@@ -302,55 +391,74 @@ function removerDoCarrinho(cartItemId) {
 }
 
 function atualizarCarrinho() {
-  const badge = document.getElementById('cart-badge');
-  if (badge) badge.textContent = carrinho.length;
+  const badge = document.getElementById("cart-badge");
+  if (badge) {
+    badge.textContent = carrinho.length;
+    badge.style.display = carrinho.length ? "flex" : "none";
+  }
 
-  const containerCarrinho = document.getElementById('carrinho-itens');
-  const totalElemento = document.getElementById('carrinho-total');
+  const lista = document.getElementById("cart-items-list");
+  const subtotalEl = document.getElementById("cart-subtotal");
+  const freteEl = document.getElementById("cart-frete");
+  const totalEl = document.getElementById("cart-total");
 
-  if (containerCarrinho) {
+  const subtotal = carrinho.reduce((soma, item) => soma + item.precoPorNum, 0);
+  const todosFreteGratis = carrinho.every(item => item.freteGratis);
+  const frete = carrinho.length === 0 || todosFreteGratis ? 0 : VALOR_FRETE;
+  const total = subtotal + frete;
+
+  if (lista) {
     if (carrinho.length === 0) {
-      containerCarrinho.innerHTML = '<p>Sua sacola está vazia.</p>';
-      if (totalElemento) totalElemento.textContent = 'R$ 0,00';
-      return;
-    }
-
-    let html = '';
-    let total = 0;
-
-    carrinho.forEach(item => {
-      total += item.precoPorNum;
-      html += `
-        <div class="cart-item" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border-bottom:1px solid #ddd; padding-bottom:8px;">
-          <div>
-            <strong>${item.nome}</strong> (Tam: ${item.tamanho})<br>
-            <small>${item.precoPor}</small>
+      lista.innerHTML = '<p class="empty-cart-msg">Sua sacola está vazia.</p>';
+    } else {
+      lista.innerHTML = carrinho.map(item => `
+        <div class="cart-item">
+          <img src="${encodeURI(item.imagens[0])}" alt="${item.nome}" onerror="this.onerror=null; this.src=IMG_RESERVA;">
+          <div class="cart-item-details">
+            <h4>${item.nome}</h4>
+            <p>Tamanho: ${item.tamanho}</p>
+            <button class="btn-remove" onclick="removerDoCarrinho(${item.cartItemId})">Remover</button>
           </div>
-          <button style="background:#e53935; color:#fff; border:none; border-radius:4px; padding:4px 8px; cursor:pointer;" onclick="removerDoCarrinho(${item.cartItemId})">Remover</button>
+          <div class="cart-item-price">${item.precoPor}</div>
         </div>
-      `;
-    });
-
-    containerCarrinho.innerHTML = html;
-    if (totalElemento) {
-      totalElemento.textContent = `R$ ${total.toFixed(2).replace('.', ',')}`;
+      `).join("");
     }
   }
+
+  if (subtotalEl) subtotalEl.textContent = formatarPreco(subtotal);
+  if (freteEl) {
+    if (carrinho.length === 0) freteEl.textContent = "—";
+    else if (frete === 0) freteEl.textContent = "GRÁTIS";
+    else freteEl.textContent = formatarPreco(frete);
+    freteEl.classList.toggle("frete-gratis", frete === 0 && carrinho.length > 0);
+  }
+  if (totalEl) totalEl.textContent = formatarPreco(total);
+
+  salvarCarrinho();
+}
+
+function finalizarCompra() {
+  if (carrinho.length === 0) {
+    mostrarAviso("Sua sacola está vazia.");
+    return;
+  }
+  alert("Pedido finalizado com sucesso! 🎉");
+  carrinho = [];
+  atualizarCarrinho();
+  mudarPagina("home");
 }
 
 // =====================================================
 // INICIALIZAÇÃO
 // =====================================================
-document.addEventListener('DOMContentLoaded', () => {
-  renderizarProdutos(produtos);
+document.addEventListener("DOMContentLoaded", () => {
+  carregarCarrinho();
+  atualizarCarrinho();
+  gerarFiltros();
+  aplicarFiltros();
 
-  const inputBusca = document.getElementById('input-busca');
+  const inputBusca = document.getElementById("input-busca");
   if (inputBusca) {
-    inputBusca.addEventListener('input', (e) => buscarProduto(e.target.value));
-  }
-
-  const btnCarrinho = document.getElementById('btn-carrinho');
-  if (btnCarrinho) {
-    btnCarrinho.addEventListener('click', () => mudarPagina('carrinho'));
+    inputBusca.addEventListener("input", (e) => buscarProduto(e.target.value));
   }
 });
