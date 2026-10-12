@@ -41,9 +41,6 @@
 
             <!-- Lado Direito: Links + Ícones de Ação -->
             <div class="header-right">
-                <a onclick="mudarPagina('home')" class="nav-text-link">NOSSAS LOJAS</a>
-                <a onclick="mudarPagina('home')" class="nav-btn-box">SEJA UM FRANQUEADO</a>
-
                 <div class="header-icons-group">
                     <a onclick="mudarPagina('home')" title="Favoritos" class="icon-link">♡</a>
                     <a onclick="mudarPagina('login')" title="Minha Conta" class="icon-link">🙎‍♂️</a>
@@ -55,6 +52,12 @@
                 </div>
             </div>
         </div>
+        <!-- Faixa de links (fica numa linha própria, longe do logo) -->
+        <nav class="header-nav">
+            <a onclick="mudarPagina('contato')" class="nav-text-link">FALE CONOSCO</a>
+            <a onclick="mudarPagina('home')" class="nav-text-link">NOSSAS LOJAS</a>
+            <a onclick="mudarPagina('home')" class="nav-btn-box">SEJA UM FRANQUEADO</a>
+        </nav>
     </header>
 
     <!-- PÁGINA: HOME / CATÁLOGO -->
@@ -142,20 +145,42 @@
     <section id="contato" class="page-section">
         <div class="form-box">
             <h2>Fale Conosco</h2>
-            <form onsubmit="event.preventDefault(); alert('Mensagem enviada com sucesso!'); mudarPagina('home');">
+            <p class="form-subtitle">Dúvidas sobre tamanhos, entregas ou pedidos? Escreva pra gente!</p>
+
+            <form id="form-contato" novalidate>
                 <div class="input-group">
-                    <label>Seu Nome</label>
-                    <input type="text" required placeholder="Ex: João">
+                    <label for="contato-nome">Seu Nome</label>
+                    <input type="text" id="contato-nome" name="nome" required minlength="2" placeholder="Ex: João" autocomplete="name">
+                    <small class="field-error"></small>
                 </div>
                 <div class="input-group">
-                    <label>Seu E-mail</label>
-                    <input type="email" required placeholder="joao@email.com">
+                    <label for="contato-email">Seu E-mail</label>
+                    <input type="email" id="contato-email" name="email" required placeholder="joao@email.com" autocomplete="email">
+                    <small class="field-error"></small>
                 </div>
                 <div class="input-group">
-                    <label>Mensagem</label>
-                    <textarea rows="4" required placeholder="Dúvidas sobre tamanhos, entregas..."></textarea>
+                    <label for="contato-assunto">Assunto</label>
+                    <select id="contato-assunto" name="assunto" required>
+                        <option value="Dúvida sobre tamanhos">Dúvida sobre tamanhos</option>
+                        <option value="Entrega / Frete">Entrega / Frete</option>
+                        <option value="Meu pedido">Meu pedido</option>
+                        <option value="Troca ou devolução">Troca ou devolução</option>
+                        <option value="Outro assunto">Outro assunto</option>
+                    </select>
                 </div>
-                <button type="submit" class="form-btn">Enviar Mensagem</button>
+                <div class="input-group">
+                    <label for="contato-mensagem">Mensagem</label>
+                    <textarea id="contato-mensagem" name="mensagem" rows="4" required minlength="10" maxlength="1000" placeholder="Dúvidas sobre tamanhos, entregas..."></textarea>
+                    <small class="field-error"></small>
+                </div>
+
+                <!-- Campo isca anti-spam (invisível para pessoas) -->
+                <input type="text" name="site" id="contato-site" tabindex="-1" autocomplete="off" class="hp-field" aria-hidden="true">
+
+                <button type="submit" class="form-btn" id="btn-enviar-contato">Enviar Mensagem</button>
+                <button type="button" class="form-btn btn-whatsapp" id="btn-whatsapp" style="display:none;">Enviar pelo WhatsApp</button>
+
+                <div id="contato-status" class="form-status" role="status" aria-live="polite"></div>
             </form>
         </div>
     </section>
