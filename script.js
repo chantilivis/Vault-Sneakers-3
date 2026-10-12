@@ -26,6 +26,15 @@ const VALOR_FRETE = 29.90;
 const CHAVE_CARRINHO = "vault-carrinho-v2";
 
 // =====================================================
+// CONFIGURAÇÃO DO "FALE CONOSCO"
+// =====================================================
+const CONTATO = {
+  email: "contato@vaultsneakers.com",  // para onde vai a mensagem (modo e-mail)
+  whatsapp: "",                         // AJUSTE: só números com DDI+DDD, ex.: "5511999999999" (vazio = botão escondido)
+  endpoint: ""                          // OPCIONAL: URL do Formspree/Getform p/ envio direto, ex.: "https://formspree.io/f/xxxxxxx"
+};
+
+// =====================================================
 // CRIAÇÃO DE PRODUTOS (calcula os preços sozinho)
 // =====================================================
 const DESCRICOES = {
@@ -449,6 +458,109 @@ function finalizarCompra() {
 }
 
 // =====================================================
+// FALE CONOSCO
+// =====================================================
+function iniciarFormContato() {
+  const form = document.getElementById("form-contato");
+  if (!form) return;
+
+  const status = document.getElementById("contato-status");
+  const btnEnviar = document.getElementById("btn-enviar-contato");
+  const btnWhats = document.getElementById("btn-whatsapp");
+
+  if (CONTATO.whatsapp && btnWhats) btnWhats.style.display = "block";
+
+  const mostrarStatus = (texto, tipo) => {
+    status.textContent = texto;
+    status.className = "form-status " + tipo;
+  };
+
+  const pegarDados = () => ({
+    nome: form.nome.value.trim(),
+    email: form.email.value.trim(),
+    assunto: form.assunto.value,
+    mensagem: form.mensagem.value.trim()
+  });
+
+  // Validação campo a campo, com mensagem embaixo de cada um
+  function validar() {
+    const d = pegarDados();
+    const regras = [
+      { campo: form.nome, ok: d.nome.length >= 2, msg: "Digite seu nome." },
+      { campo: form.email, ok: /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(d.email), msg: "Digite um e-mail válido." },
+      { campo: form.mensagem, ok: d.mensagem.length >= 10, msg: "Escreva pelo menos 10 caracteres." }
+    ];
+    let tudoOk = true;
+    regras.forEach(r => {
+      const grupo = r.campo.closest(".input-group");
+      grupo.classList.toggle("invalid", !r.ok);
+      grupo.querySelector(".field-error").textContent = r.ok ? "" : r.msg;
+      if (!r.ok) tudoOk = false;
+    });
+    return tudoOk;
+  }
+
+  // limpa o erro ao digitar
+  form.querySelectorAll("input, textarea").forEach(campo => {
+    campo.addEventListener("input", () => campo.closest(".input-group")?.classList.remove("invalid"));
+  });
+
+  const montarTexto = (d) =>
+    `Nome: ${d.nome}\nE-mail: ${d.email}\nAssunto: ${d.assunto}\n\n${d.mensagem}`;
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    mostrarStatus("", "");
+
+    // campo isca preenchido = robô, finge que enviou
+    if (document.getElementById("contato-site").value) {
+      mostrarStatus("Mensagem enviada!", "ok");
+      return;
+    }
+    if (!validar()) return;
+
+    const d = pegarDados();
+
+    // Modo 1: envio direto por endpoint (Formspree etc.)
+    if (CONTATO.endpoint) {
+      btnEnviar.disabled = true;
+      btnEnviar.textContent = "Enviando...";
+      try {
+        const resp = await fetch(CONTATO.endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Accept": "application/json" },
+          body: JSON.stringify({ nome: d.nome, email: d.email, assunto: d.assunto, mensagem: d.mensagem })
+        });
+        if (!resp.ok) throw new Error("Falha no envio");
+        form.reset();
+        mostrarStatus("Mensagem enviada com sucesso! Responderemos em breve. 🎉", "ok");
+      } catch (err) {
+        mostrarStatus("Não foi possível enviar agora. Tente novamente ou use o e-mail " + CONTATO.email, "erro");
+      } finally {
+        btnEnviar.disabled = false;
+        btnEnviar.textContent = "Enviar Mensagem";
+      }
+      return;
+    }
+
+    // Modo 2 (padrão): abre o app de e-mail do cliente com a mensagem pronta
+    const assuntoEmail = encodeURIComponent(`[Vault Sneakers] ${d.assunto}`);
+    const corpo = encodeURIComponent(montarTexto(d));
+    window.location.href = `mailto:${CONTATO.email}?subject=${assuntoEmail}&body=${corpo}`;
+    mostrarStatus("Abrindo seu aplicativo de e-mail... É só apertar em enviar por lá. ✉️", "ok");
+  });
+
+  if (btnWhats) {
+    btnWhats.addEventListener("click", () => {
+      if (!validar()) return;
+      const texto = encodeURIComponent(montarTexto(pegarDados()));
+      window.open(`https://wa.me/${CONTATO.whatsapp}?text=${texto}`, "_blank", "noopener");
+      mostrarStatus("Abrindo o WhatsApp... 💬", "ok");
+    });
+  }
+}
+
+// =====================================================
 // INICIALIZAÇÃO
 // =====================================================
 document.addEventListener("DOMContentLoaded", () => {
@@ -456,6 +568,7 @@ document.addEventListener("DOMContentLoaded", () => {
   atualizarCarrinho();
   gerarFiltros();
   aplicarFiltros();
+  iniciarFormContato();
 
   const inputBusca = document.getElementById("input-busca");
   if (inputBusca) {
