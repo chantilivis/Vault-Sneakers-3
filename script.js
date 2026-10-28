@@ -35,6 +35,18 @@ const CONTATO = {
 };
 
 // =====================================================
+// CONFIGURAÇÃO DO CARROSSEL (4 tênis em destaque)
+// =====================================================
+// Use exatamente o "nome" do produto, igual está em DADOS_PRODUTOS.
+const CARROSSEL_NOMES = [
+  "Air force 1 low panda",          // Air Force (preto e branco)
+  "Nike Air Jordan 4 Bred",         // Jordan (vermelho e preto)
+  "Nike Air Max 95 Neon",           // Air Max (neon)
+  "Nike Dunk Low Varsity Green"     // Dunk (verde)
+];
+const CARROSSEL_INTERVALO = 4000; // tempo entre as trocas (ms)
+
+// =====================================================
 // CRIAÇÃO DE PRODUTOS (calcula os preços sozinho)
 // =====================================================
 const DESCRICOES = {
@@ -458,6 +470,92 @@ function finalizarCompra() {
 }
 
 // =====================================================
+// CARROSSEL
+// =====================================================
+function iniciarCarrossel() {
+  const el = document.getElementById("carrossel");
+  if (!el) return;
+
+  const vistos = new Set();
+  const itens = CARROSSEL_NOMES
+    .map(nome => produtos.find(p => p.nome === nome))
+    .filter(p => {
+      if (!p || vistos.has(p.id) || vistos.has(p.imagens[0])) return false;
+      vistos.add(p.id);
+      vistos.add(p.imagens[0]);
+      return true;
+    })
+    .slice(0, 4);
+  if (itens.length === 0) { el.style.display = "none"; return; }
+
+  const slides = itens.map(p => `
+    <div class="carousel-slide">
+      <div class="slide-text">
+        <span class="slide-tag">${p.marca} • ${p.categoria}</span>
+        <h3 class="slide-title">${p.nome}</h3>
+        ${p.desconto ? `<span class="slide-off">${p.desconto}</span>` : ""}
+        <p class="slide-price">a partir de <strong>${p.precoPor}</strong></p>
+        <button type="button" class="carousel-cta" onclick="abrirDetalhes(${p.id})">confira já!</button>
+      </div>
+      <div class="slide-img">
+        <img src="${encodeURI(p.imagens[0])}" alt="${p.nome}" onerror="this.onerror=null; this.src=IMG_RESERVA;">
+      </div>
+    </div>
+  `).join("");
+
+  const controles = itens.length > 1 ? `
+    <button type="button" class="carousel-btn prev" aria-label="Anterior">&#8249;</button>
+    <button type="button" class="carousel-btn next" aria-label="Próximo">&#8250;</button>
+    <div class="carousel-dots">
+      ${itens.map((_, i) => `<button type="button" class="carousel-dot${i === 0 ? " active" : ""}" aria-label="Ir para o slide ${i + 1}"></button>`).join("")}
+    </div>
+  ` : "";
+
+  el.innerHTML = `<div class="carousel-track">${slides}</div>${controles}`;
+  if (itens.length < 2) return;
+
+  const track = el.querySelector(".carousel-track");
+  const dots = el.querySelectorAll(".carousel-dot");
+  let atual = 0;
+  let timer = null;
+
+  function ir(indice) {
+    atual = (indice + itens.length) % itens.length;
+    track.style.transform = `translateX(-${atual * 100}%)`;
+    dots.forEach((d, i) => d.classList.toggle("active", i === atual));
+  }
+
+  const reduzirMovimento = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function iniciarAuto() {
+    pararAuto();
+    if (!reduzirMovimento) timer = setInterval(() => ir(atual + 1), CARROSSEL_INTERVALO);
+  }
+  function pararAuto() { clearInterval(timer); }
+
+  el.querySelector(".prev").addEventListener("click", () => { ir(atual - 1); iniciarAuto(); });
+  el.querySelector(".next").addEventListener("click", () => { ir(atual + 1); iniciarAuto(); });
+  dots.forEach((d, i) => d.addEventListener("click", () => { ir(i); iniciarAuto(); }));
+
+  // pausa com o mouse em cima
+  el.addEventListener("mouseenter", pararAuto);
+  el.addEventListener("mouseleave", iniciarAuto);
+
+  // arrastar com o dedo no celular
+  let inicioX = null;
+  el.addEventListener("touchstart", (e) => { inicioX = e.touches[0].clientX; pararAuto(); }, { passive: true });
+  el.addEventListener("touchend", (e) => {
+    if (inicioX !== null) {
+      const dx = e.changedTouches[0].clientX - inicioX;
+      if (Math.abs(dx) > 40) ir(dx < 0 ? atual + 1 : atual - 1);
+    }
+    inicioX = null;
+    iniciarAuto();
+  });
+
+  iniciarAuto();
+}
+
+// =====================================================
 // FALE CONOSCO
 // =====================================================
 function iniciarFormContato() {
@@ -568,6 +666,7 @@ document.addEventListener("DOMContentLoaded", () => {
   atualizarCarrinho();
   gerarFiltros();
   aplicarFiltros();
+  iniciarCarrossel();
   iniciarFormContato();
 
   const inputBusca = document.getElementById("input-busca");
